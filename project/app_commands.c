@@ -14,6 +14,9 @@
 
 
 int sockfd, new_fd, new_fds[BACKLOG]; //listen on sock_fd, new connections on new_fd	
+int fd_listen[BACKLOG] = {[0 ... BACKLOG-1] = -2};
+int fd_send[BACKLOG] = {[0 ... BACKLOG-1] = -2};
+int fd_num = 0;
 struct addrinfo hints, *servinfo, *p;
 struct sockaddr_storage their_addr;
 
@@ -141,6 +144,22 @@ int server_listen(){
 		}
 		inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
 		printf("server: got connection from %s\n", s);
+		if (fd_num < BACKLOG){
+			for (int i = 0; i < BACKLOG; ++i){
+				if (fd_listen[i] == -2 && fd_send[i] == -2){
+					printf("pre_listen\n");
+					fd_listen[i] = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+					sleep(2);
+					printf("pre_send\n");
+		//			fd_send[i] = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+		//			printf("after_accept\n");
+		//			fd_num++;
+					break;
+				}
+			}
+		} else {
+			perror("BACKLOG full");
+		}	
 		if (!fork()) {
 			close(sockfd);
 			if (send(new_fd, "Hello there!", 13, 0) == -1)
@@ -152,25 +171,6 @@ int server_listen(){
 			exit(0);
 		}
 		close(new_fd);
-
-		//sin_size = sizeof their_addr;
-		//new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-		//if (new_fd == -1) {
-		//	perror("accept");
-		//	continue;
-		//}
-
-		//inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
-		//printf("server: got connection from %s\n", s);
-
-		//if (!fork()) {
-		//	close(sockfd);
-		//	if (send(new_fd, "Hello there!", 13, 0) == -1)
-		//		perror("send");
-		//	close(new_fd);
-		//	exit(0);
-		//}
-		//close(new_fd);
 	}
 
 	return 0;

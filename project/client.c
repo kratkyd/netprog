@@ -30,7 +30,8 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-    int sockfd, numbytes;  
+    int sockfd, newfd, numbytes;  
+    int fd_listen, fd_send;
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
     int rv;
@@ -52,17 +53,43 @@ int main(int argc, char *argv[])
 
     // loop through all the results and connect to the first we can
     for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+        if ((newfd = socket(p->ai_family, p->ai_socktype,
                 p->ai_protocol)) == -1) {
             perror("client: socket");
             continue;
         }
 
-        if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sockfd);
-            perror("client: connect");
-            continue;
+        if (connect(newfd, p->ai_addr, p->ai_addrlen) == -1) {
+        	close(sockfd);
+        	perror("client: connect");
+        	continue;
         }
+	usleep(50);
+
+	sleep(2);
+
+	
+	if ((fd_send = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+		close(sockfd);
+		close(fd_send);
+		perror("client: socket - send");
+	}
+
+	if (connect(fd_send, p->ai_addr, p->ai_addrlen) == -1) {
+		close(sockfd);
+		close(fd_send);
+		perror("client: connect - send");
+	}
+
+//	
+//	usleep(50);
+//	fd_listen = connect(sockfd, p->ai_addr, p->ai_addrlen) == -1;
+//	if (fd_listen == -1) {
+//		close(fd_send);
+//		perror("client: listen");
+//		continue;
+//	}	
+//	printf("listen socket established\n");
 
         break;
     }
@@ -78,7 +105,7 @@ int main(int argc, char *argv[])
 
     freeaddrinfo(servinfo); // all done with this structure
 
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+    if ((numbytes = recv(newfd, buf, MAXDATASIZE-1, 0)) == -1) {
         perror("recv");
         exit(1);
     }
@@ -88,9 +115,9 @@ int main(int argc, char *argv[])
 
     printf("client: received '%s'\n",buf);
 
-   if (send(sockfd, "Hello right back!", 18, 0) == -1)
+   if (send(newfd, "Hello right back!", 18, 0) == -1)
 	   perror("send");
-    close(sockfd);
+    close(newfd);
 
     return 0;
 }
