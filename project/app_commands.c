@@ -149,11 +149,10 @@ int server_listen(){
 				if (fd_listen[i] == -2 && fd_send[i] == -2){
 					printf("pre_listen\n");
 					fd_listen[i] = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-					sleep(2);
 					printf("pre_send\n");
-		//			fd_send[i] = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
-		//			printf("after_accept\n");
-		//			fd_num++;
+					fd_send[i] = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+					printf("after_accept\n");
+					fd_num++;
 					break;
 				}
 			}

@@ -60,36 +60,45 @@ int main(int argc, char *argv[])
         }
 
         if (connect(newfd, p->ai_addr, p->ai_addrlen) == -1) {
-        	close(sockfd);
+        	close(newfd);
         	perror("client: connect");
         	continue;
         }
 	usleep(50);
 
-	sleep(2);
 
 	
 	if ((fd_send = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-		close(sockfd);
-		close(fd_send);
+		close(newfd);
 		perror("client: socket - send");
+		continue;
 	}
 
 	if (connect(fd_send, p->ai_addr, p->ai_addrlen) == -1) {
-		close(sockfd);
+		close(newfd);
 		close(fd_send);
 		perror("client: connect - send");
+		continue;
 	}
 
-//	
-//	usleep(50);
-//	fd_listen = connect(sockfd, p->ai_addr, p->ai_addrlen) == -1;
-//	if (fd_listen == -1) {
-//		close(fd_send);
-//		perror("client: listen");
-//		continue;
-//	}	
-//	printf("listen socket established\n");
+	
+	usleep(50);
+
+	if ((fd_listen = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
+		close(newfd);
+		close(fd_send);
+		perror("client: socket - listen");
+		continue;
+	}
+
+	if (connect(fd_listen, p->ai_addr, p->ai_addrlen) == -1) {
+		close(newfd);
+		close(fd_send);
+		close(fd_listen);
+		perror("client: listen");
+		continue;
+	}	
+	printf("listen socket established\n");
 
         break;
     }
