@@ -8,6 +8,8 @@
 #include <netdb.h>
 #include <unistd.h>
 
+#include <fcntl.h>
+
 #define PORT "3434"
 #define BACKLOG 10
 #define MAXDATASIZE 500
@@ -142,6 +144,7 @@ int server_listen(){
 			perror("accept");
 			continue;
 		}
+		
 		inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *)&their_addr), s, sizeof s);
 		printf("server: got connection from %s\n", s);
 		if (fd_num < BACKLOG){
@@ -149,6 +152,19 @@ int server_listen(){
 				if (fd_listen[i] == -2 && fd_send[i] == -2){
 					printf("pre_listen\n");
 					fd_listen[i] = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+				//  ##### if I need to check for closed socket	
+				//	int flags = fcntl(fd_listen[i], F_GETFL, 0);
+				//	if (flags == -1){
+				//		perror("fcntl failed");
+				//	} else {
+				//		if (flags & O_NONBLOCK) {
+				//			printf("socket is non-blocking\n");
+				//		} else {
+				//			printf("socket is blocking\n");
+				//		}
+				//	}
+				//  ##########################				
+	
 					printf("pre_send\n");
 					fd_send[i] = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
 					printf("after_accept\n");
@@ -165,9 +181,29 @@ int server_listen(){
 				perror("send");
 			if (recv(new_fd, buf, MAXDATASIZE-1, 0) == -1)
 				perror("recv");
-			printf("%s\n", buf);
+
+			printf("%s\n", buf);	
 			close(new_fd);
 			exit(0);
+		}
+		for (int i = 0; i < BACKLOG; ++i){
+			//printf("%i\n",fd_listen[i]);
+			//printf("%i\n",fd_send[i]);
+			if (fd_listen[i] != -2){
+				if (!fork()){
+					while(1){
+						int msg_len = recv(fd_listen[i], buf, MAXDATASIZE-1, 0);
+						if (msg_len == -1)
+							perror("recv - child");
+						if (msg_len == 0)
+							exit(0);
+						printf("%s\n", buf);
+						
+						//exit(0);	
+						//don't forget to kill the child
+					}
+				}
+			}
 		}
 		close(new_fd);
 	}

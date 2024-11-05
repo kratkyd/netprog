@@ -124,9 +124,21 @@ int main(int argc, char *argv[])
 
     printf("client: received '%s'\n",buf);
 
-   if (send(newfd, "Hello right back!", 18, 0) == -1)
-	   perror("send");
+// 	if (send(newfd, "Hello right back!", 18, 0) == -1)
+//	   perror("send");
+//
+//	if (send(fd_send, "Another message!", 17, 0) == -1)
+//		perror("send");
+//
+//	if (send(fd_send, "Yet another message!", 21, 0) == -1)
+//		perror("send");
+//		
+	while(1){
+		scanf("%s", &buf);
+		if (send(fd_send, buf, MAXDATASIZE, 0) == -1)
+			perror("send error");		
+	}
+	
     close(newfd);
-
     return 0;
 }
